@@ -1,25 +1,69 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ErrorBanner } from '../../components/ui/ErrorBanner';
 import { SuccessBanner } from '../../components/ui/SuccessBanner';
-import { LoginState } from '../../types/api';
+import { ChurchBranding, LoginState } from '../../types/api';
 import { storeAuth } from './authStorage';
-import { setPassword } from './authApi';
+import { getChurchBranding, setPassword } from './authApi';
 
 type SetPasswordPageProps = {
+  churchSlug: string;
   onLogin: (auth: LoginState) => void;
 };
 
-export function SetPasswordPage({ onLogin }: SetPasswordPageProps) {
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'CA';
+}
+
+export function SetPasswordPage({ churchSlug, onLogin }: SetPasswordPageProps) {
   const inviteToken = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('token') ?? '';
   }, []);
 
+  const [branding, setBranding] = useState<ChurchBranding | null>(null);
   const [password, setPasswordValue] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isBrandingLoading, setIsBrandingLoading] = useState(true);
+
+  const churchName = branding?.name ?? 'Church Admin';
+  const initials = useMemo(() => getInitials(churchName), [churchName]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBranding() {
+      try {
+        setIsBrandingLoading(true);
+        const result = await getChurchBranding(churchSlug);
+
+        if (!cancelled) {
+          setBranding(result);
+        }
+      } catch {
+        if (!cancelled) {
+          setBranding(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsBrandingLoading(false);
+        }
+      }
+    }
+
+    loadBranding();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [churchSlug]);
 
   async function submit() {
     if (!inviteToken) {
@@ -50,7 +94,7 @@ export function SetPasswordPage({ onLogin }: SetPasswordPageProps) {
 
       storeAuth(result);
       setSuccessMessage('Password set successfully. Redirecting...');
-      window.history.replaceState({}, '', '/');
+      window.history.replaceState({}, '', `/${churchSlug}`);
 
       onLogin(result);
     } catch (error) {
@@ -63,10 +107,14 @@ export function SetPasswordPage({ onLogin }: SetPasswordPageProps) {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="logo-mark">LB</div>
+        {branding?.logoUrl ? (
+          <img className="login-logo-image" src={branding.logoUrl} alt={`${churchName} logo`} />
+        ) : (
+          <div className="logo-mark">{initials}</div>
+        )}
 
         <h1>Set Password</h1>
-        <p>Create your password for La Borne Church Cape Durbanville.</p>
+        <p>Create your password for {isBrandingLoading ? 'your church portal' : churchName}.</p>
 
         <ErrorBanner message={pageError} />
         <SuccessBanner message={successMessage} />

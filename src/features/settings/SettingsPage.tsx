@@ -6,7 +6,7 @@ export function SettingsPage() {
       <h1 className="page-title">Settings</h1>
       <Card title="System Settings">
         <div className="alert">
-          Next real build items: Google/Apple login, .NET API, database migrations, file storage, audit logs and role permissions.
+          Configure church branding, user access, reporting preferences and operational settings for the live portal.
         </div>
       </Card>
     </>

@@ -1,18 +1,70 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ErrorBanner } from '../../components/ui/ErrorBanner';
-import { LoginState } from '../../types/api';
+import { ChurchBranding, LoginState } from '../../types/api';
 import { storeAuth } from './authStorage';
-import { login } from './authApi';
+import { getChurchBranding, login } from './authApi';
 
 type LoginPageProps = {
+  churchSlug: string;
   onLogin: (auth: LoginState) => void;
 };
 
-export function LoginPage({ onLogin }: LoginPageProps) {
-  const [email, setEmail] = useState('admin@church.local');
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'CA';
+}
+
+export function LoginPage({ churchSlug, onLogin }: LoginPageProps) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [branding, setBranding] = useState<ChurchBranding | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBrandingLoading, setIsBrandingLoading] = useState(true);
+
+  const churchName = branding?.name ?? 'Church Admin';
+  const welcomeText = branding?.welcomeText ?? 'Sign in to your church admin portal.';
+  const initials = useMemo(() => getInitials(churchName), [churchName]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBranding() {
+      try {
+        setIsBrandingLoading(true);
+        setPageError(null);
+
+        const result = await getChurchBranding(churchSlug);
+
+        if (!cancelled) {
+          setBranding(result);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setBranding(null);
+          setPageError(
+            error instanceof Error
+              ? error.message
+              : 'Church portal could not be loaded.'
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsBrandingLoading(false);
+        }
+      }
+    }
+
+    loadBranding();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [churchSlug]);
 
   async function submit() {
     if (!email.trim()) {
@@ -30,6 +82,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       setPageError(null);
 
       const result = await login({
+        churchSlug,
         email: email.trim(),
         password
       });
@@ -46,10 +99,14 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="logo-mark">LB</div>
+        {branding?.logoUrl ? (
+          <img className="login-logo-image" src={branding.logoUrl} alt={`${churchName} logo`} />
+        ) : (
+          <div className="logo-mark">{initials}</div>
+        )}
 
-        <h1>La Borne Church</h1>
-        <p>Cape Durbanville Admin Portal</p>
+        <h1>{isBrandingLoading ? 'Loading portal...' : churchName}</h1>
+        <p>{welcomeText}</p>
 
         <ErrorBanner message={pageError} />
 
@@ -57,9 +114,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           <label>Email</label>
           <input
             value={email}
-            disabled={isLoading}
+            disabled={isLoading || isBrandingLoading}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="admin@church.local"
+            placeholder="you@church.org"
           />
         </div>
 
@@ -68,7 +125,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           <input
             type="password"
             value={password}
-            disabled={isLoading}
+            disabled={isLoading || isBrandingLoading}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Enter your password"
             onKeyDown={(event) => {
@@ -83,7 +140,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           className="primary-btn"
           style={{ width: '100%' }}
           onClick={submit}
-          disabled={isLoading}
+          disabled={isLoading || isBrandingLoading}
         >
           {isLoading ? 'Signing in...' : 'Sign in'}
         </button>

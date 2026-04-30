@@ -18,12 +18,35 @@ import { clearStoredAuth, getStoredAuth } from '../features/auth/authStorage';
 import { LoginState } from '../types/api';
 import { PageKey } from './navigation';
 
+const defaultChurchSlug = 'laborne';
+
+function getRouteParts() {
+  return window.location.pathname
+    .split('/')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function getChurchSlugFromPath() {
+  const [firstPart] = getRouteParts();
+
+  if (!firstPart || firstPart.toLowerCase() === 'login' || firstPart.toLowerCase() === 'set-password') {
+    return defaultChurchSlug;
+  }
+
+  return firstPart.toLowerCase();
+}
+
+function isRoute(routeName: string) {
+  return getRouteParts().some((part) => part.toLowerCase() === routeName);
+}
+
 export function App() {
   const [auth, setAuth] = useState<LoginState | null>(() => getStoredAuth());
   const [activePage, setActivePage] = useState<PageKey>('dashboard');
 
-  const isSetPasswordRoute =
-    window.location.pathname.toLowerCase() === '/set-password';
+  const churchSlug = getChurchSlugFromPath();
+  const isSetPasswordRoute = isRoute('set-password');
 
   useEffect(() => {
     function handleAuthExpired() {
@@ -40,11 +63,11 @@ export function App() {
   }, []);
 
   if (isSetPasswordRoute) {
-    return <SetPasswordPage onLogin={setAuth} />;
+    return <SetPasswordPage churchSlug={churchSlug} onLogin={setAuth} />;
   }
 
   if (!auth) {
-    return <LoginPage onLogin={setAuth} />;
+    return <LoginPage churchSlug={churchSlug} onLogin={setAuth} />;
   }
 
   function logout() {
