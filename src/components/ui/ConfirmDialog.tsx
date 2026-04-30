@@ -1,43 +1,32 @@
-type ConfirmDialogProps = {
-  open: boolean;
+type Props = {
+  isOpen: boolean;
   title: string;
   message: string;
   confirmLabel?: string;
-  cancelLabel?: string;
-  danger?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
 export function ConfirmDialog({
-  open,
+  isOpen,
   title,
   message,
   confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
-  danger = false,
   onConfirm,
-  onCancel
-}: ConfirmDialogProps) {
-  if (!open) {
-    return null;
-  }
+  onCancel,
+}: Props) {
+  if (!isOpen) return null;
 
   return (
-    <div className="dialog-backdrop" role="dialog" aria-modal="true">
-      <div className="dialog-card">
+    <div className="modal-backdrop">
+      <div className="confirm-modal">
         <h2>{title}</h2>
-        <p>{message}</p>
-
-        <div className="dialog-actions">
+        <p style={{ color: '#94a3b8' }}>{message}</p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
           <button className="secondary-btn" onClick={onCancel}>
-            {cancelLabel}
+            Cancel
           </button>
-
-          <button
-            className={danger ? 'danger-btn' : 'primary-btn'}
-            onClick={onConfirm}
-          >
+          <button className="danger-btn" onClick={onConfirm}>
             {confirmLabel}
           </button>
         </div>

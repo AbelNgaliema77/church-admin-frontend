@@ -1,33 +1,28 @@
-# Church Admin Starter
+# Church Admin — Frontend
 
-Responsive React + TypeScript starter for a church admin system.
+React 18 + TypeScript + Vite
 
-## Run locally
+## Environment Variables
+
+| Variable | Description |
+|---|---|
+| `VITE_API_BASE_URL` | Backend API URL (e.g. `https://church-admin-api.onrender.com`) |
+
+## Local Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL shown by Vite.
+## Deploy on Render (Static Site)
 
-## What is included
+1. Create a **Static Site** on Render pointing to this repo
+2. Build command: `npm install && npm run build`
+3. Publish directory: `dist`
+4. Set `VITE_API_BASE_URL` to your backend URL
 
-- Responsive PC sidebar layout
-- Mobile bottom navigation
-- Dashboard with charts
-- Attendance registry
-- Worker registration
-- Finance entry
-- Inventory entry
-- Mock data only
+## Notes
 
-## What is NOT included yet
-
-- Real authentication
-- Real backend API
-- Database
-- File uploads
-- Audit logs
-
-Recommended next step: build the .NET API and replace `src/lib/mockData.ts` with API calls.
+- The `public/_redirects` file handles SPA routing (all paths → `index.html`)
+- Church slug defaults to `laborne` — update `DEFAULT_CHURCH_SLUG` in `src/app/App.tsx` if needed

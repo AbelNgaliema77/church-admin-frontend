@@ -1,19 +1,33 @@
 import { navItems, PageKey } from '../../app/navigation';
+import { getStoredAuth } from '../../features/auth/authStorage';
 
 type Props = {
   activePage: PageKey;
   onNavigate: (page: PageKey) => void;
 };
 
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('') || 'CA';
+}
+
 export function Sidebar({ activePage, onNavigate }: Props) {
+  const auth = getStoredAuth();
+  const churchName = auth?.user.churchName ?? 'Church Admin';
+  const initials = getInitials(churchName);
+
   return (
     <aside className="sidebar">
       <div className="logo">
-        <div className="logo-mark">RS</div>
+        <div className="logo-mark">{initials}</div>
         <div className="logo-title">
-  LA BORNE CHURCH
-  <span>CAPE DURBANVILLE</span>
-</div>
+          {churchName}
+          <span>Admin Portal</span>
+        </div>
       </div>
 
       <nav>

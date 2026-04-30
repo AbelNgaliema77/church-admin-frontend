@@ -1,55 +1,91 @@
 import { useEffect, useState } from 'react';
 import { getDashboardSummary } from './dashboardApi';
 import { getStoredAuth } from '../auth/authStorage';
+import { Loader } from '../../components/ui/Loader';
+import { ErrorBanner } from '../../components/ui/ErrorBanner';
+
+type DashboardSummary = {
+  activeWorkers: number;
+  activeTeams: number;
+  inventoryItems: number;
+  pendingInventoryItems: number;
+  attendanceThisMonth: number;
+  financeThisMonth: number;
+};
+
+type StatCard = {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+};
 
 export function DashboardPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
+      const auth = getStoredAuth();
+      if (!auth) return;
+
       try {
-        const auth = getStoredAuth();
-
-        if (!auth) {
-          return;
-        }
-
+        setIsLoading(true);
+        setError(null);
         const result = await getDashboardSummary(auth.token);
-        setData(result);
+        if (!cancelled) setData(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load');
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load dashboard.');
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     load();
+    return () => { cancelled = true; };
   }, []);
 
-  if (error) {
-    return <div className="form-error">{error}</div>;
-  }
+  if (isLoading) return <Loader message="Loading dashboard..." />;
+  if (error) return <ErrorBanner message={error} />;
+  if (!data) return null;
 
-  if (!data) {
-    return <div>Loading dashboard...</div>;
-  }
+  const stats: StatCard[] = [
+    { title: 'Active Workers', value: data.activeWorkers, subtitle: 'Serving members' },
+    { title: 'Active Teams', value: data.activeTeams, subtitle: 'Ministry teams' },
+    { title: 'Inventory Items', value: data.inventoryItems, subtitle: 'Total assets' },
+    { title: 'Pending Inventory', value: data.pendingInventoryItems, subtitle: 'Requires attention' },
+    { title: 'Attendance This Month', value: data.attendanceThisMonth, subtitle: 'Total count' },
+    {
+      title: 'Finance This Month',
+      value: `R ${data.financeThisMonth.toLocaleString()}`,
+      subtitle: 'Total collected'
+    },
+  ];
 
   return (
-    <div className="dashboard-grid">
-      <Card title="Active Workers" value={data.activeWorkers} />
-      <Card title="Active Teams" value={data.activeTeams} />
-      <Card title="Inventory Items" value={data.inventoryItems} />
-      <Card title="Pending Inventory" value={data.pendingInventoryItems} />
-      <Card title="Attendance (This Month)" value={data.attendanceThisMonth} />
-      <Card title="Finance (This Month)" value={`R ${data.financeThisMonth}`} />
-    </div>
+    <>
+      <h1 className="page-title">Dashboard</h1>
+      <div className="dashboard-grid">
+        {stats.map((stat) => (
+          <StatCard key={stat.title} title={stat.title} value={stat.value} subtitle={stat.subtitle} />
+        ))}
+      </div>
+    </>
   );
 }
 
-function Card({ title, value }: { title: string; value: any }) {
+function StatCard({ title, value, subtitle }: StatCard) {
   return (
     <div className="card">
-      <div className="card-title">{title}</div>
+      <div className="card-title" style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8', marginBottom: 10 }}>
+        {title}
+      </div>
       <div className="card-value">{value}</div>
+      {subtitle && (
+        <div style={{ marginTop: 6, fontSize: 12, color: '#64748b' }}>{subtitle}</div>
+      )}
     </div>
   );
 }

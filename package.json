@@ -1,8 +1,11 @@
 {
+  "name": "church-admin",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --port 4173"
   },
   "dependencies": {
     "clsx": "latest",

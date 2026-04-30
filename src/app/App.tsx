@@ -18,27 +18,25 @@ import { clearStoredAuth, getStoredAuth } from '../features/auth/authStorage';
 import { LoginState } from '../types/api';
 import { PageKey } from './navigation';
 
-const defaultChurchSlug = 'laborne';
+const DEFAULT_CHURCH_SLUG = import.meta.env.VITE_DEFAULT_CHURCH_SLUG ?? 'laborne';
 
-function getRouteParts() {
+function getRouteParts(): string[] {
   return window.location.pathname
     .split('/')
-    .map((part) => part.trim())
+    .map((p) => p.trim())
     .filter(Boolean);
 }
 
-function getChurchSlugFromPath() {
-  const [firstPart] = getRouteParts();
-
-  if (!firstPart || firstPart.toLowerCase() === 'login' || firstPart.toLowerCase() === 'set-password') {
-    return defaultChurchSlug;
+function getChurchSlugFromPath(): string {
+  const [first] = getRouteParts();
+  if (!first || ['login', 'set-password'].includes(first.toLowerCase())) {
+    return DEFAULT_CHURCH_SLUG;
   }
-
-  return firstPart.toLowerCase();
+  return first.toLowerCase();
 }
 
-function isRoute(routeName: string) {
-  return getRouteParts().some((part) => part.toLowerCase() === routeName);
+function isRoute(name: string): boolean {
+  return getRouteParts().some((p) => p.toLowerCase() === name);
 }
 
 export function App() {
@@ -49,17 +47,14 @@ export function App() {
   const isSetPasswordRoute = isRoute('set-password');
 
   useEffect(() => {
-    function handleAuthExpired() {
+    function handleExpired() {
       clearStoredAuth();
       setAuth(null);
       setActivePage('dashboard');
     }
 
-    window.addEventListener('church-admin-auth-expired', handleAuthExpired);
-
-    return () => {
-      window.removeEventListener('church-admin-auth-expired', handleAuthExpired);
-    };
+    window.addEventListener('church-admin-auth-expired', handleExpired);
+    return () => window.removeEventListener('church-admin-auth-expired', handleExpired);
   }, []);
 
   if (isSetPasswordRoute) {

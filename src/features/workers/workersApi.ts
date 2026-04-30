@@ -1,5 +1,11 @@
 import { request } from '../../lib/apiClient';
-import { Team } from '../../types/domain';
+
+export type WorkerTeamInfo = {
+  teamId: string;
+  teamName: string;
+  roleInTeam: number;
+  startDate: string;
+};
 
 export type Worker = {
   id: string;
@@ -7,8 +13,11 @@ export type Worker = {
   email: string;
   phone: string;
   address: string;
+  dateOfBirth: string;
+  startedServing: string;
+  baptized: boolean;
   status: 'Active' | 'Inactive';
-  teams: Team[];
+  teams: WorkerTeamInfo[];
 };
 
 export type CreateWorkerRequest = {
@@ -16,7 +25,11 @@ export type CreateWorkerRequest = {
   email: string;
   phone: string;
   address: string;
-  teamIds: string[];
+  dateOfBirth: string;
+  startedServing: string;
+  baptized: boolean;
+  teamId: string;
+  roleInTeam: number;
 };
 
 export type UpdateWorkerRequest = {
@@ -24,6 +37,9 @@ export type UpdateWorkerRequest = {
   email: string;
   phone: string;
   address: string;
+  dateOfBirth: string;
+  startedServing: string;
+  baptized: boolean;
   status: 'Active' | 'Inactive';
 };
 
@@ -31,22 +47,24 @@ export function getWorkers(token: string): Promise<Worker[]> {
   return request('/api/workers', token);
 }
 
-export function createWorker(token: string, data: CreateWorkerRequest) {
+export function createWorker(token: string, data: CreateWorkerRequest): Promise<Worker> {
   return request('/api/workers', token, {
     method: 'POST',
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
-export function updateWorker(token: string, id: string, data: UpdateWorkerRequest) {
+export function updateWorker(token: string, id: string, data: UpdateWorkerRequest): Promise<void> {
   return request(`/api/workers/${id}`, token, {
     method: 'PUT',
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 }
 
-export function deleteWorker(token: string, id: string) {
-  return request(`/api/workers/${id}`, token, {
-    method: 'DELETE'
-  });
+export function deleteWorker(token: string, id: string): Promise<void> {
+  return request(`/api/workers/${id}`, token, { method: 'DELETE' });
+}
+
+export function deactivateWorker(token: string, id: string): Promise<void> {
+  return request(`/api/workers/${id}/deactivate`, token, { method: 'PATCH' });
 }
